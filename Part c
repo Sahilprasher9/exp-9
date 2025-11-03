@@ -1,0 +1,117 @@
+## Step 1: Account.java
+package com.nimbus.banking;
+
+import javax.persistence.*;
+
+@Entity
+@Table(name = "accounts")
+public class Account {
+    @Id
+    private int accountId;
+    private String holderName;
+    private double balance;
+
+    public Account() {}
+
+    public Account(int accountId, String holderName, double balance) {
+        this.accountId = accountId;
+        this.holderName = holderName;
+        this.balance = balance;
+    }
+
+    public int getAccountId() { return accountId; }
+    public double getBalance() { return balance; }
+    public void setBalance(double balance) { this.balance = balance; }
+
+    @Override
+    public String toString() {
+        return holderName + " - Balance: " + balance;
+    }
+}
+
+## Step 2: AccountDAO.java
+package com.nimbus.banking;
+
+import javax.persistence.*;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public class AccountDAO {
+    @PersistenceContext
+    private EntityManager em;
+
+    public Account findById(int id) {
+        return em.find(Account.class, id);
+    }
+
+    public void update(Account acc) {
+        em.merge(acc);
+    }
+}
+
+## Step 3: BankService.java
+package com.nimbus.banking;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class BankService {
+    @Autowired
+    private AccountDAO dao;
+
+    @Transactional
+    public void transferMoney(int fromId, int toId, double amount) {
+        Account from = dao.findById(fromId);
+        Account to = dao.findById(toId);
+
+        from.setBalance(from.getBalance() - amount);
+        to.setBalance(to.getBalance() + amount);
+
+        dao.update(from);
+        dao.update(to);
+        System.out.println("Transfer Successful!");
+    }
+}
+
+## Step 4: AppConfig.java
+package com.nimbus.banking;
+
+import org.springframework.context.annotation.*;
+import org.springframework.orm.jpa.*;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+@Configuration
+@EnableTransactionManagement
+@ComponentScan("com.nimbus.banking")
+public class AppConfig {
+
+    @Bean
+    public LocalEntityManagerFactoryBean entityManagerFactory() {
+        LocalEntityManagerFactoryBean factory = new LocalEntityManagerFactoryBean();
+        factory.setPersistenceUnitName("banking_unit");
+        return factory;
+    }
+
+    @Bean
+    public JpaTransactionManager transactionManager() {
+        return new JpaTransactionManager();
+    }
+}
+
+## Step 5: Main Class MainApp.java
+package com.nimbus.banking;
+
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+public class MainApp {
+    public static void main(String[] args) {
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
+        BankService service = context.getBean(BankService.class);
+
+        service.transferMoney(1001, 1002, 2000.00);
+
+        context.close();
+    }
+}
