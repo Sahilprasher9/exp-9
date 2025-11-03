@@ -1,0 +1,65 @@
+##step-1
+package com.nimbus.springdemo;
+
+public class Course {
+    private String courseName;
+
+    public Course(String courseName) {
+        this.courseName = courseName;
+    }
+
+    public void displayCourse() {
+        System.out.println("Enrolled in Course: " + courseName);
+    }
+}
+
+
+##step-2
+package com.nimbus.springdemo;
+
+public class Student {
+    private Course course;
+
+    public Student(Course course) {  // Constructor-based Dependency Injection
+        this.course = course;
+    }
+
+    public void showDetails() {
+        System.out.println("Student details:");
+        course.displayCourse();
+    }
+}
+
+##step-3
+package com.nimbus.springdemo;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class AppConfig {
+
+    @Bean
+    public Course course() {
+        return new Course("Spring and Hibernate");
+    }
+
+    @Bean
+    public Student student() {
+        return new Student(course());
+    }
+}
+
+##step-4
+package com.nimbus.springdemo;
+
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+public class MainApp {
+    public static void main(String[] args) {
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
+        Student student = context.getBean(Student.class);
+        student.showDetails();
+        context.close();
+    }
+}
